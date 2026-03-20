@@ -1205,6 +1205,42 @@
 
     loadSettings();
 
+    // ── Publish ────────────────────────────────────────────
+    const publishBtn = document.getElementById('publish-btn');
+
+    publishBtn.addEventListener('click', async () => {
+      if (images.length === 0) return;
+
+      const html = images.map(entry => {
+        const text = (entry.generated || '').trim();
+        return [
+          `<div style="margin-bottom:2em;">`,
+          `<img src="${entry.dataUrl}" style="max-width:100%;display:block;" alt="${entry.name.replace(/"/g, '&quot;')}" />`,
+          text ? `<p style="margin-top:1em;">${text.replace(/\n/g, '<br/>')}</p>` : '',
+          `</div>`,
+        ].join('\n');
+      }).join('\n');
+
+      try {
+        await navigator.clipboard.write([
+          new ClipboardItem({ 'text/html': new Blob([html], { type: 'text/html' }) }),
+        ]);
+        publishBtn.textContent = '✓ Copied!';
+      } catch (err) {
+        // Fallback: copy as plain HTML text if ClipboardItem is blocked
+        try {
+          await navigator.clipboard.writeText(html);
+          publishBtn.textContent = '✓ Copied (text)';
+        } catch {
+          publishBtn.textContent = '✗ Failed';
+        }
+      }
+
+      setTimeout(() => {
+        publishBtn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9l20-7z"/></svg> Publish`;
+      }, 2500);
+    });
+
     // ── Resize All ─────────────────────────────────────────
     const resizeAllBtn = document.getElementById('resize-all-btn');
     const RESIZE_ALL_WIDTH = 810;
