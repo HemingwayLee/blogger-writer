@@ -132,6 +132,26 @@
     }
     .card-remove:hover { color: #f87171; background: rgba(248,113,113,0.1); }
 
+    .card-drag-handle {
+      color: #444;
+      cursor: grab;
+      padding: 4px 2px;
+      display: flex;
+      align-items: center;
+      flex-shrink: 0;
+      transition: color 0.15s;
+    }
+    .card-drag-handle:active { cursor: grabbing; }
+    .image-card:hover .card-drag-handle { color: #666; }
+
+    .image-card.drag-over {
+      border-color: #3b82f6;
+      background: #1e3a5f;
+    }
+    .image-card.dragging {
+      opacity: 0.4;
+    }
+
     .empty-state {
       text-align: center;
       color: #555;
@@ -186,6 +206,53 @@
     }
     #resize-all-btn:hover { background: #92400e; }
     #resize-all-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    #generate-all-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: #7c3aed;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 9px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+    }
+    #generate-all-btn:hover { background: #6d28d9; }
+    #generate-all-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── Card lock / processing states ── */
+    .image-card.card-locked {
+      pointer-events: none;
+      position: relative;
+    }
+    .image-card.card-locked::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      border-radius: 8px;
+    }
+    .image-card .card-status {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .image-card .card-status svg {
+      filter: drop-shadow(0 1px 3px rgba(0,0,0,0.8));
+    }
+    .spin { animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     #settings-btn {
       width: 100%;
@@ -406,6 +473,27 @@
     #main-img { cursor: pointer; }
     #main-img:hover { opacity: 0.9; }
 
+    #main-lock-overlay {
+      display: none;
+      position: absolute;
+      inset: 0;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 12px;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(2px);
+      z-index: 10;
+      pointer-events: all;
+      cursor: not-allowed;
+    }
+    #main-lock-overlay.visible { display: flex; }
+    #main-lock-overlay span {
+      font-size: 13px;
+      color: #aaa;
+      letter-spacing: 0.03em;
+    }
+
     /* ── Modal overlay ── */
     #modal-overlay {
       display: none;
@@ -623,6 +711,12 @@
         </svg>
         Resize All
       </button>
+      <button id="generate-all-btn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
+        </svg>
+        Generate All
+      </button>
       <button id="publish-btn">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9l20-7z"/>
@@ -726,6 +820,12 @@
     </div>
     <img id="main-img" alt="Preview" />
     <span id="main-label"></span>
+    <div id="main-lock-overlay">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      </svg>
+      <span>Waiting for generation…</span>
+    </div>
   </main>
 
   <!-- Image detail modal -->
@@ -795,6 +895,7 @@
     const mainImg         = document.getElementById('main-img');
     const mainLabel       = document.getElementById('main-label');
     const mainPlaceholder = document.getElementById('main-placeholder');
+    const mainLockOverlay = document.getElementById('main-lock-overlay');
 
     const modalOverlay    = document.getElementById('modal-overlay');
     const modalTitle      = document.getElementById('modal-title');
@@ -808,7 +909,14 @@
     let images = [];   // { name, size, dataUrl, card, description, generated }
     let activeIndex = null;
     let modalIndex  = null;
+    let modalEntry  = null;
     let aspectRatio = 1;  // width / height
+    const lockedEntries = new Set();  // entries locked during Generate All
+
+    function refreshMainLock() {
+      const locked = activeIndex !== null && lockedEntries.has(images[activeIndex]);
+      mainLockOverlay.classList.toggle('visible', locked);
+    }
     let changingDim = false;  // guard against recursive input events
 
     uploadBtn.addEventListener('click', () => fileInput.click());
@@ -846,9 +954,18 @@
       reader.readAsDataURL(file);
     }
 
+    let dragSrcEntry = null;
+
     function createCard(entry) {
       const card = document.createElement('div');
       card.className = 'image-card';
+      card.draggable = true;
+
+      // Drag handle
+      const handle = document.createElement('div');
+      handle.className = 'card-drag-handle';
+      handle.title = 'Drag to reorder';
+      handle.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="5" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg>`;
 
       const thumb = document.createElement('img');
       thumb.src = entry.dataUrl;
@@ -874,18 +991,73 @@
       removeBtn.title = 'Remove';
       removeBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
 
+      const statusEl = document.createElement('div');
+      statusEl.className = 'card-status';
+      entry.statusEl = statusEl;
+
+      card.appendChild(handle);
       card.appendChild(thumb);
       card.appendChild(info);
       card.appendChild(removeBtn);
+      card.appendChild(statusEl);
 
       card.addEventListener('click', (e) => {
-        if (e.target.closest('.card-remove')) return;
+        if (e.target.closest('.card-remove') || e.target.closest('.card-drag-handle')) return;
         selectImage(images.indexOf(entry));
       });
 
       removeBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         removeImage(images.indexOf(entry));
+      });
+
+      // ── Drag events ──
+      card.addEventListener('dragstart', (e) => {
+        dragSrcEntry = entry;
+        card.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+
+      card.addEventListener('dragend', () => {
+        card.classList.remove('dragging');
+        document.querySelectorAll('.image-card').forEach(c => c.classList.remove('drag-over'));
+      });
+
+      card.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        if (dragSrcEntry !== entry) card.classList.add('drag-over');
+      });
+
+      card.addEventListener('dragleave', () => {
+        card.classList.remove('drag-over');
+      });
+
+      card.addEventListener('drop', (e) => {
+        e.preventDefault();
+        card.classList.remove('drag-over');
+        if (!dragSrcEntry || dragSrcEntry === entry) return;
+
+        const fromIdx = images.indexOf(dragSrcEntry);
+        const toIdx   = images.indexOf(entry);
+        if (fromIdx === -1 || toIdx === -1) return;
+
+        // Reorder the images array
+        images.splice(fromIdx, 1);
+        images.splice(toIdx, 0, dragSrcEntry);
+
+        // Reorder in the DOM
+        if (fromIdx < toIdx) {
+          imageList.insertBefore(dragSrcEntry.card, entry.card.nextSibling);
+        } else {
+          imageList.insertBefore(dragSrcEntry.card, entry.card);
+        }
+
+        // Keep activeIndex and modalIndex pointing at the same entries after reorder
+        activeIndex = images.findIndex(e => e.card.classList.contains('active'));
+        if (modalIndex !== null) modalIndex = images.indexOf(modalEntry);
+
+        dragSrcEntry = null;
       });
 
       return card;
@@ -904,6 +1076,7 @@
       mainLabel.textContent = entry.name;
       mainLabel.style.display = 'block';
       mainPlaceholder.style.display = 'none';
+      refreshMainLock();
     }
 
     function removeImage(index) {
@@ -1086,11 +1259,13 @@
     // ── Modal ──────────────────────────────────────────────
     mainImg.addEventListener('click', () => {
       if (activeIndex === null) return;
+      if (lockedEntries.has(images[activeIndex])) return;
       openModal(activeIndex);
     });
 
     function openModal(index) {
       modalIndex = index;
+      modalEntry = images[index];
       const entry = images[index];
       modalTitle.textContent = entry.name;
       modalDesc.value      = entry.description;
@@ -1108,6 +1283,7 @@
         images[modalIndex].generated   = modalGenerated.value;
       }
       modalIndex = null;
+      modalEntry = null;
       modalOverlay.classList.remove('open');
     }
 
@@ -1224,6 +1400,91 @@
         generateBtn.disabled = false;
         generateBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 8v4l3 3"/><path d="M18 2v4h4"/></svg> Generate Text`;
       }
+    });
+
+    // ── Generate All ────────────────────────────────────────
+    const generateAllBtn = document.getElementById('generate-all-btn');
+
+    const SPINNER_SVG = `<svg class="spin" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>`;
+    const LOCK_SVG    = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
+    const DONE_SVG    = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-5"/></svg>`;
+
+    function buildOllamaPrompt(entry) {
+      const userHint   = entry.description.trim();
+      const hintClause = userHint ? `\n使用者補充說明：「${userHint}」` : '';
+      return `請仔細觀察這張圖片，並以繁體中文撰寫一段約 150 至 200 字的生動描述。請依照以下結構組織內容：\n1. 描述圖片中的主體、場景、色彩與值得注意的細節。\n2. 描述這張圖片所傳達的氛圍或情感。\n3. 若圖片中含有食物或飲品，請描述其可能的味道、香氣與口感，包括質地、風味、溫度等感官細節。${hintClause}\n\n請以流暢的散文書寫（不使用條列式或標題），並確保全文以繁體中文呈現，字數控制在 150 至 200 字之間。`;
+    }
+
+    async function generateForEntry(entry) {
+      const base64 = entry.dataUrl.split(',')[1];
+      const { protocol, host, port, model } = ollamaSettings;
+      const url = `${protocol}://${host}:${port}/api/generate`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model,
+          prompt: buildOllamaPrompt(entry),
+          images: [base64],
+          stream: false,
+        }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      return data.response ?? '';
+    }
+
+    generateAllBtn.addEventListener('click', async () => {
+      if (images.length === 0) return;
+
+      generateAllBtn.disabled = true;
+      generateBtn.disabled    = true;  // also lock the single-generate button
+
+      // Lock all cards (waiting state)
+      images.forEach(e => {
+        lockedEntries.add(e);
+        e.card.classList.add('card-locked');
+        e.statusEl.innerHTML = LOCK_SVG;
+      });
+      refreshMainLock();
+
+      for (let i = 0; i < images.length; i++) {
+        const entry = images[i];
+
+        // Switch this card to "processing" spinner
+        entry.statusEl.innerHTML = SPINNER_SVG;
+
+        try {
+          const text = await generateForEntry(entry);
+          entry.generated = text;
+
+          // If the modal is open on this image, sync the textarea
+          if (modalIndex !== null && images[modalIndex] === entry) {
+            modalGenerated.value = text;
+          }
+        } catch (err) {
+          entry.generated = `Error: ${err.message}`;
+        }
+
+        // Unlock this card (done)
+        lockedEntries.delete(entry);
+        entry.card.classList.remove('card-locked');
+        entry.statusEl.innerHTML = DONE_SVG;
+        refreshMainLock();
+
+        // Fade the done checkmark out after 2 s
+        setTimeout(() => { if (entry.statusEl) entry.statusEl.innerHTML = ''; }, 2000);
+      }
+
+      lockedEntries.clear();
+      refreshMainLock();
+      generateAllBtn.disabled = false;
+      generateBtn.disabled    = false;
+
+      generateAllBtn.textContent = `✓ Done (${images.length})`;
+      setTimeout(() => {
+        generateAllBtn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg> Generate All`;
+      }, 2500);
     });
   </script>
 </body>
