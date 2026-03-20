@@ -145,6 +145,9 @@
     #sidebar-footer {
       padding: 12px;
       border-top: 1px solid #333;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
 
     #publish-btn {
@@ -164,6 +167,180 @@
       transition: background 0.15s;
     }
     #publish-btn:hover { background: #15803d; }
+
+    #settings-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: transparent;
+      color: #888;
+      border: 1px solid #3a3a3a;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    #settings-btn:hover { background: #2e2e2e; color: #ccc; border-color: #555; }
+
+    /* ── Settings modal ── */
+    #settings-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+    #settings-overlay.open { display: flex; }
+
+    #settings-modal {
+      background: #242424;
+      border: 1px solid #3a3a3a;
+      border-radius: 12px;
+      width: 460px;
+      max-width: calc(100vw - 48px);
+      max-height: calc(100vh - 48px);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+    }
+
+    #settings-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      border-bottom: 1px solid #333;
+      flex-shrink: 0;
+    }
+    #settings-header h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #ddd;
+    }
+    #settings-close {
+      background: none;
+      border: none;
+      color: #666;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+      display: flex;
+      transition: color 0.15s;
+    }
+    #settings-close:hover { color: #ddd; }
+
+    #settings-body {
+      overflow-y: auto;
+      padding: 20px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    #settings-body::-webkit-scrollbar { width: 5px; }
+    #settings-body::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
+
+    .settings-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .settings-group label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #888;
+    }
+    .settings-group input,
+    .settings-group select {
+      background: #1a1a1a;
+      border: 1px solid #3a3a3a;
+      border-radius: 8px;
+      color: #ddd;
+      font-size: 13px;
+      font-family: inherit;
+      padding: 9px 12px;
+      outline: none;
+      width: 100%;
+      transition: border-color 0.15s;
+    }
+    .settings-group input:focus,
+    .settings-group select:focus { border-color: #3b82f6; }
+    .settings-group select option { background: #2a2a2a; }
+
+    .settings-group .hint {
+      font-size: 11px;
+      color: #555;
+      margin-top: 2px;
+    }
+
+    .settings-row {
+      display: flex;
+      gap: 12px;
+    }
+    .settings-row .settings-group { flex: 1; }
+
+    .settings-section-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #555;
+      padding-bottom: 4px;
+      border-bottom: 1px solid #2e2e2e;
+    }
+
+    #settings-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      padding: 14px 18px;
+      border-top: 1px solid #333;
+      flex-shrink: 0;
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: #888;
+      border: 1px solid #3a3a3a;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .btn-secondary:hover { background: #2e2e2e; color: #ccc; }
+
+    .btn-primary {
+      background: #3b82f6;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 18px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-primary:hover { background: #2563eb; }
+
+    #settings-status {
+      font-size: 12px;
+      color: #555;
+      align-self: center;
+      margin-right: auto;
+    }
+    #settings-status.ok  { color: #4ade80; }
+    #settings-status.err { color: #f87171; }
 
     /* ── Main area ── */
     #main {
@@ -276,6 +453,14 @@
     #modal-body::-webkit-scrollbar { width: 5px; }
     #modal-body::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
 
+    .modal-section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .modal-section-header label { margin-bottom: 0; }
+
     .modal-section label {
       display: block;
       font-size: 11px;
@@ -284,6 +469,29 @@
       letter-spacing: 0.06em;
       color: #888;
       margin-bottom: 8px;
+    }
+
+    #generate-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #7c3aed;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 5px 11px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+      white-space: nowrap;
+    }
+    #generate-btn:hover { background: #6d28d9; }
+    #generate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    #modal-generated[readonly] {
+      opacity: 0.85;
+      cursor: default;
     }
 
     .modal-section textarea {
@@ -396,8 +604,90 @@
         </svg>
         Publish
       </button>
+      <button id="settings-btn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+        Settings
+      </button>
     </div>
   </aside>
+
+  <!-- Settings modal -->
+  <div id="settings-overlay">
+    <div id="settings-modal">
+      <div id="settings-header">
+        <h3>Ollama Connection</h3>
+        <button id="settings-close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <div id="settings-body">
+        <div class="settings-section-title">Server</div>
+
+        <div class="settings-row">
+          <div class="settings-group">
+            <label>IP / Host</label>
+            <input type="text" id="cfg-host" placeholder="127.0.0.1" />
+          </div>
+          <div class="settings-group" style="max-width:120px">
+            <label>Port</label>
+            <input type="number" id="cfg-port" placeholder="11434" min="1" max="65535" />
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <label>Protocol</label>
+          <select id="cfg-protocol">
+            <option value="http">http</option>
+            <option value="https">https</option>
+          </select>
+        </div>
+
+        <div class="settings-section-title" style="margin-top:4px">Model</div>
+
+        <div class="settings-group">
+          <label>Model Name</label>
+          <input type="text" id="cfg-model" placeholder="gemma3:12b" />
+          <div class="hint">e.g. llava, llava:13b, bakllava, moondream</div>
+        </div>
+
+        <div class="settings-group">
+          <label>Request Timeout (seconds)</label>
+          <input type="number" id="cfg-timeout" placeholder="120" min="1" />
+        </div>
+
+        <div class="settings-section-title" style="margin-top:4px">Advanced</div>
+
+        <div class="settings-group">
+          <label>System Prompt</label>
+          <input type="text" id="cfg-system" placeholder="You are a helpful assistant." />
+          <div class="hint">Optional system prompt sent with every request.</div>
+        </div>
+
+        <div class="settings-row">
+          <div class="settings-group">
+            <label>Temperature</label>
+            <input type="number" id="cfg-temperature" placeholder="0.7" min="0" max="2" step="0.1" />
+          </div>
+          <div class="settings-group">
+            <label>Max Tokens</label>
+            <input type="number" id="cfg-max-tokens" placeholder="2048" min="1" />
+          </div>
+        </div>
+      </div>
+
+      <div id="settings-footer">
+        <span id="settings-status"></span>
+        <button class="btn-secondary" id="settings-test-btn">Test Connection</button>
+        <button class="btn-primary" id="settings-save-btn">Save</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Main viewer -->
   <main id="main">
@@ -427,14 +717,22 @@
       <div id="modal-body">
         <!-- Section 1: Description -->
         <div class="modal-section">
-          <label>Description</label>
+          <div class="modal-section-header">
+            <label>Description</label>
+            <button id="generate-btn">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 8v4l3 3"/><path d="M18 2v4h4"/>
+              </svg>
+              Generate Text
+            </button>
+          </div>
           <textarea id="modal-description" placeholder="Add a description…"></textarea>
         </div>
 
         <!-- Section 2: Generated text -->
         <div class="modal-section">
           <label>Generated Text</label>
-          <textarea id="modal-generated" placeholder="Generated text will appear here…"></textarea>
+          <textarea id="modal-generated" placeholder="Generated text will appear here…" readonly></textarea>
         </div>
 
         <!-- Section 3: Resize -->
@@ -609,6 +907,106 @@
       return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
     }
 
+    // ── Settings ───────────────────────────────────────────
+    const settingsBtn     = document.getElementById('settings-btn');
+    const settingsOverlay = document.getElementById('settings-overlay');
+    const settingsClose   = document.getElementById('settings-close');
+    const settingsSaveBtn = document.getElementById('settings-save-btn');
+    const settingsTestBtn = document.getElementById('settings-test-btn');
+    const settingsStatus  = document.getElementById('settings-status');
+
+    const SETTINGS_KEY = 'ollama_settings';
+    const SETTINGS_DEFAULTS = {
+      host: '127.0.0.1',
+      port: '11434',
+      protocol: 'http',
+      model: 'gemma3:12b',
+      timeout: '120',
+      system: '',
+      temperature: '0.7',
+      maxTokens: '2048',
+    };
+
+    let ollamaSettings = { ...SETTINGS_DEFAULTS };
+
+    function loadSettings() {
+      try {
+        const saved = localStorage.getItem(SETTINGS_KEY);
+        if (saved) ollamaSettings = { ...SETTINGS_DEFAULTS, ...JSON.parse(saved) };
+      } catch (_) {}
+    }
+
+    function saveSettings() {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(ollamaSettings));
+    }
+
+    function populateSettingsForm() {
+      document.getElementById('cfg-host').value        = ollamaSettings.host;
+      document.getElementById('cfg-port').value        = ollamaSettings.port;
+      document.getElementById('cfg-protocol').value    = ollamaSettings.protocol;
+      document.getElementById('cfg-model').value       = ollamaSettings.model;
+      document.getElementById('cfg-timeout').value     = ollamaSettings.timeout;
+      document.getElementById('cfg-system').value      = ollamaSettings.system;
+      document.getElementById('cfg-temperature').value = ollamaSettings.temperature;
+      document.getElementById('cfg-max-tokens').value  = ollamaSettings.maxTokens;
+    }
+
+    function readSettingsForm() {
+      ollamaSettings.host        = document.getElementById('cfg-host').value.trim()        || SETTINGS_DEFAULTS.host;
+      ollamaSettings.port        = document.getElementById('cfg-port').value.trim()        || SETTINGS_DEFAULTS.port;
+      ollamaSettings.protocol    = document.getElementById('cfg-protocol').value           || SETTINGS_DEFAULTS.protocol;
+      ollamaSettings.model       = document.getElementById('cfg-model').value.trim()       || SETTINGS_DEFAULTS.model;
+      ollamaSettings.timeout     = document.getElementById('cfg-timeout').value.trim()     || SETTINGS_DEFAULTS.timeout;
+      ollamaSettings.system      = document.getElementById('cfg-system').value.trim();
+      ollamaSettings.temperature = document.getElementById('cfg-temperature').value.trim() || SETTINGS_DEFAULTS.temperature;
+      ollamaSettings.maxTokens   = document.getElementById('cfg-max-tokens').value.trim() || SETTINGS_DEFAULTS.maxTokens;
+    }
+
+    settingsBtn.addEventListener('click', () => {
+      settingsStatus.textContent = '';
+      settingsStatus.className = '';
+      populateSettingsForm();
+      settingsOverlay.classList.add('open');
+    });
+
+    function closeSettings() { settingsOverlay.classList.remove('open'); }
+    settingsClose.addEventListener('click', closeSettings);
+    settingsOverlay.addEventListener('click', (e) => { if (e.target === settingsOverlay) closeSettings(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSettings(); });
+
+    settingsSaveBtn.addEventListener('click', () => {
+      readSettingsForm();
+      saveSettings();
+      settingsStatus.textContent = 'Saved.';
+      settingsStatus.className = 'ok';
+      setTimeout(() => { settingsStatus.textContent = ''; settingsStatus.className = ''; }, 2000);
+    });
+
+    settingsTestBtn.addEventListener('click', async () => {
+      readSettingsForm();
+      settingsStatus.textContent = 'Testing…';
+      settingsStatus.className = '';
+      const url = `${ollamaSettings.protocol}://${ollamaSettings.host}:${ollamaSettings.port}/api/tags`;
+      try {
+        const ctrl = new AbortController();
+        const tid   = setTimeout(() => ctrl.abort(), 5000);
+        const res   = await fetch(url, { signal: ctrl.signal });
+        clearTimeout(tid);
+        if (res.ok) {
+          settingsStatus.textContent = 'Connected!';
+          settingsStatus.className = 'ok';
+        } else {
+          settingsStatus.textContent = `Error ${res.status}`;
+          settingsStatus.className = 'err';
+        }
+      } catch (err) {
+        settingsStatus.textContent = err.name === 'AbortError' ? 'Timed out' : 'Unreachable';
+        settingsStatus.className = 'err';
+      }
+    });
+
+    loadSettings();
+
     // ── Modal ──────────────────────────────────────────────
     mainImg.addEventListener('click', () => {
       if (activeIndex === null) return;
@@ -696,6 +1094,57 @@
         setTimeout(() => { resizeBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Resize`; }, 1500);
       };
       img.src = entry.dataUrl;
+    });
+
+    // ── Generate Text ──────────────────────────────────────
+    const generateBtn = document.getElementById('generate-btn');
+
+    generateBtn.addEventListener('click', async () => {
+      if (modalIndex === null) return;
+      const entry  = images[modalIndex];
+      const prompt = modalDesc.value.trim();
+      if (!prompt) {
+        modalDesc.focus();
+        modalDesc.placeholder = 'Enter a description / prompt first…';
+        return;
+      }
+
+      // Strip the data URL prefix to get raw base64
+      const base64 = entry.dataUrl.split(',')[1];
+
+      const { protocol, host, port, model } = ollamaSettings;
+      const url = `${protocol}://${host}:${port}/api/generate`;
+
+      generateBtn.disabled = true;
+      generateBtn.textContent = 'Generating…';
+      modalGenerated.value = '';
+
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model,
+            prompt,
+            images: [base64],
+            stream: false,
+          }),
+        });
+
+        if (!res.ok) {
+          const err = await res.text();
+          modalGenerated.value = `Error ${res.status}: ${err}`;
+        } else {
+          const data = await res.json();
+          modalGenerated.value = data.response ?? JSON.stringify(data);
+          images[modalIndex].generated = modalGenerated.value;
+        }
+      } catch (err) {
+        modalGenerated.value = `Failed to reach Ollama: ${err.message}\n\nCheck your connection settings.`;
+      } finally {
+        generateBtn.disabled = false;
+        generateBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 8v4l3 3"/><path d="M18 2v4h4"/></svg> Generate Text`;
+      }
     });
   </script>
 </body>
